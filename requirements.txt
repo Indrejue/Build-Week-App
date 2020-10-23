@@ -53,3 +53,4 @@ tqdm==4.50.2
 urllib3==1.25.8
 webencodings==0.5.1
 Werkzeug==1.0.1
+gunicorn==19.9.0
