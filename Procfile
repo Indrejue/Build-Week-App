@@ -1,1 +1,1 @@
-gunicorn index:server
+web: gunicorn index:server -t 120
