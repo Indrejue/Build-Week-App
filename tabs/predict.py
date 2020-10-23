@@ -204,6 +204,7 @@ def predict(pet_fixed, pet_gender, pet_type, Month, Age, pet_colors):
     pipeline = load('model/pipeline.joblib')
     y_pred = pipeline.predict(df)[0]
     print(y_pred)
+    print(df)
     if y_pred == 0:
         return html.H3('Pet is not likely to go to a home', className ='mb-5'),
     else:
