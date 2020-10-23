@@ -5,21 +5,108 @@ import dash_html_components as html
 from joblib import load
 import numpy as np
 import pandas as pd
+import shap
+import category_encoders
 
 from app import app
 
-loan_purposes = ['Business',
-                 'Car financing',
-                 'Credit card refinancing',
-                 'Debt consolidation',
-                 'Green loan',
-                 'Home buying',
-                 'Home improvement',
-                 'Major purchase',
-                 'Medical expenses',
-                 'Moving and relocation',
-                 'Other',
-                 'Vacation']
+pet_colors = ['black white',
+                'black',
+                'brown tabby',
+                'brown white',
+                'tan white',
+                'brown tabby white',
+                'white',
+                'black tan',
+                'orange tabby',
+                'blue white',
+                'black brown',
+                'tricolor',
+                'other',
+                'brown',
+                'tan',
+                'brindle brown white',
+                'tortie',
+                'calico',
+                'orange tabby white',
+                'blue',
+                'blue tabby',
+                'red white',
+                'red',
+                'torbie',
+                'chocolate white',
+                'blue tabby white',
+                'brindle brown',
+                'buff',
+                'sable',
+                'cream tabby',
+                'yellow',
+                'lynx point',
+                'cream',
+                'gray white',
+                'chocolate',
+                'point seal',
+                'fawn white',
+                'gray',
+                'sable white',
+                'flame point',
+                'cream tabby white',
+                'black brindle white',
+                'buff white',
+                'black red',
+                'blue merle',
+                'brown tan',
+                'cream white',
+                'fawn',
+                'tricolor white',
+                'chocolate tan',
+                'torbie white',
+                'black brindle brown',
+                'orange white',
+                'black gray',
+                'gold',
+                'blue merle white',
+                'black tricolor',
+                'black smoke',
+                'white yellow',
+                'black tabby',
+                'lilac point',
+                'blue tan',
+                'brown merle white',
+                'brown merle',
+                'gray tabby',
+                'tortie white',
+                'point tortie',
+                'silver tan',
+                'red tan',
+                'blue point',
+                'silver tabby',
+                'gray tan',
+                'merle red white',
+                'black cream',
+                'blue merle tan',
+                'merle red',
+                'calico white',
+                'calico point',
+                'liver white',
+                'black tabby white',
+                'gold white',
+                'red tick white',
+                'apricot',
+                'brindle white yellow',
+                'black brindle',
+                'buff tan'
+]
+
+pet_fixed = ['fixed',
+            'not fixed'
+]
+pet_gender = ['male',
+            'female'
+]
+pet_type = ['Cat',
+            'Dog'
+]
 
 style = {'padding': '1.5em'}
 
@@ -27,67 +114,71 @@ layout = html.Div([
     dcc.Markdown("""
         ### Predict
 
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+        Is the pet going to a home?
     
     """), 
 
     html.Div([
-        dcc.Markdown('###### Annual Income'), 
-        dcc.Slider(
-            id='annual-income', 
-            min=20000,
-            max=200000,
-            step=5000,
-            value=65000, 
-            marks={n: f'{n/1000:.0f}k' for n in range(20000,220000,20000)} 
+        dcc.Markdown('###### Is the animal fixed'), 
+        dcc.Dropdown(
+            id='Fixed', 
+            options=[{'label': fixed, 'value': fixed} for fixed in pet_fixed], 
+            value=pet_fixed[0]
         ), 
     ], style=style), 
 
     html.Div([
-        dcc.Markdown('###### Credit Score'), 
+        dcc.Markdown('###### Gender'), 
+        dcc.Dropdown(
+            id='Gender', 
+            options=[{'label': gender, 'value': gender} for gender in pet_gender], 
+            value=pet_gender[0]
+        ), 
+    ], style=style), 
+
+    html.Div([
+        dcc.Markdown('###### Pet Type'), 
+        dcc.Dropdown(
+            id='AnimalType', 
+            options=[{'label': pet, 'value': pet} for pet in pet_type], 
+            value=pet_type[0]
+        ), 
+    ], style=style), 
+
+    html.Div([
+        dcc.Markdown('###### Month Came In'), 
         dcc.Slider(
-            id='credit-score', 
-            min=650,
-            max=850, 
-            step=10, 
-            value=700, 
-            marks={n: str(n) for n in range(650,900,50)}
+            id='Month', 
+            min=0,
+            max=12, 
+            step=1, 
+            value=1, 
+            marks={n: str(n) for n in range(1,12,1)}
         ),
     ], style=style), 
 
     html.Div([
-        dcc.Markdown('###### Loan Amount'), 
+        dcc.Markdown('###### Age In Months'), 
         dcc.Slider(
-            id='loan-amount', 
-            min=1000, 
-            max=40000, 
-            step=1000, 
-            value=10000, 
-            marks={n: f'{n/1000:.0f}k' for n in range(5000,45000,5000)}
+            id='Age', 
+            min=0, 
+            max=240, 
+            step=1, 
+            value=12, 
+            marks={n: str(n) for n in range(0,240,12)}
         ),  
     ], style=style),
 
     html.Div([
-        dcc.Markdown('###### Loan Purpose'), 
+        dcc.Markdown('###### The Pets Color'), 
         dcc.Dropdown(
-            id='loan-purpose', 
-            options=[{'label': purpose, 'value': purpose} for purpose in loan_purposes], 
-            value=loan_purposes[0]
+            id='Color', 
+            options=[{'label': colors, 'value': colors} for colors in pet_colors], 
+            value=pet_colors[0]
         ), 
     ], style=style),
 
-    html.Div([
-        dcc.Markdown('###### Monthly Debts'), 
-        dcc.Slider(
-            id='monthly-debts', 
-            min=0, 
-            max=5000, 
-            step=100, 
-            value=1000, 
-            marks={n: str(n) for n in range(500,5500,500)}
-        )
-    ], style=style),
-
+   
     dcc.Markdown('### Prediction'), 
     html.Div(id='prediction-content', style={'marginBottom': '5em'}), 
 
@@ -95,20 +186,25 @@ layout = html.Div([
 
 @app.callback(
     Output('prediction-content', 'children'),
-    [Input('annual-income', 'value'),
-     Input('credit-score', 'value'),
-     Input('loan-amount', 'value'),
-     Input('loan-purpose', 'value'),
-     Input('monthly-debts', 'value')])
-def predict(annual_income, credit_score, loan_amount, loan_purpose, monthly_debts):
+    [Input('Fixed', 'value'),
+     Input('Gender', 'value'),
+     Input('AnimalType', 'value'),
+     Input('Month', 'value'),
+     Input('Age', 'value'),
+     Input('Color', 'value')])
+def predict(pet_fixed, pet_gender, pet_type, Month, Age, pet_colors):
 
     df = pd.DataFrame(
-        columns=['Annual Income', 'Credit Score', 'Loan Amount', 'Loan Purpose', 'Monthly Debts'], 
-        data=[[annual_income, credit_score, loan_amount, loan_purpose, monthly_debts]]
+        columns=['Fixed', 'Gender', 'AnimalType', 
+        'Month', 'Age','Color','Name','Breed', 'Year'], 
+        data=[[pet_fixed, pet_gender, pet_type, 
+        Month, Age, pet_colors, 'other', 'other', np.NaN]]
     )
-
+    df=df[['Name','AnimalType','Breed','Color','Year','Month','Gender','Fixed','Age']]
     pipeline = load('model/pipeline.joblib')
-    y_pred_log = pipeline.predict(df)
-    y_pred = np.expm1(y_pred_log)[0]
-
-    return f'Interest rate for 36 month loan: {y_pred:.2f}%'
+    y_pred = pipeline.predict(df)[0]
+    print(y_pred)
+    if y_pred == 0:
+        return html.H3('Pet is not likely to go to a home', className ='mb-5'),
+    else:
+        return html.H3('Pet will likely go to a home', className ='mb-5')
