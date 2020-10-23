@@ -6,6 +6,7 @@ from joblib import load
 import numpy as np
 import pandas as pd
 import shap
+import category_encoders
 
 from app import app
 
@@ -122,7 +123,7 @@ layout = html.Div([
         dcc.Dropdown(
             id='Fixed', 
             options=[{'label': fixed, 'value': fixed} for fixed in pet_fixed], 
-            value=Fixed[0]
+            value=pet_fixed[0]
         ), 
     ], style=style), 
 
@@ -131,7 +132,7 @@ layout = html.Div([
         dcc.Dropdown(
             id='Gender', 
             options=[{'label': gender, 'value': gender} for gender in pet_gender], 
-            value=Gender[0]
+            value=pet_gender[0]
         ), 
     ], style=style), 
 
@@ -140,7 +141,7 @@ layout = html.Div([
         dcc.Dropdown(
             id='AnimalType', 
             options=[{'label': pet, 'value': pet} for pet in pet_type], 
-            value=AnimalType[0]
+            value=pet_type[0]
         ), 
     ], style=style), 
 
@@ -173,7 +174,7 @@ layout = html.Div([
         dcc.Dropdown(
             id='Color', 
             options=[{'label': colors, 'value': colors} for colors in pet_colors], 
-            value=Color[0]
+            value=pet_colors[0]
         ), 
     ], style=style),
 
@@ -191,15 +192,18 @@ layout = html.Div([
      Input('Month', 'value'),
      Input('Age', 'value'),
      Input('Color', 'value')])
-def predict(Fixed, Gender, AnimalType, Month, Age, Color):
+def predict(pet_fixed, pet_gender, pet_type, Month, Age, pet_colors):
 
     df = pd.DataFrame(
-        columns=['Fixed', 'Gender', 'AnimalType', 'Month', 'Age','Color','Name','Breed', 'Year'], 
-        data=[[Fixed, Gender, AnimalType, Month, Age, Color, 'other', 'other', np.NaN]]
+        columns=['Fixed', 'Gender', 'AnimalType', 
+        'Month', 'Age','Color','Name','Breed', 'Year'], 
+        data=[[pet_fixed, pet_gender, pet_type, 
+        Month, Age, pet_colors, 'other', 'other', np.NaN]]
     )
-
+    df=df[['Name','AnimalType','Breed','Color','Year','Month','Gender','Fixed','Age']]
     pipeline = load('model/pipeline.joblib')
     y_pred = pipeline.predict(df)[0]
+    print(y_pred)
     if y_pred == 0:
         return html.H3('Pet is not likely to go to a home', className ='mb-5'),
     else:
